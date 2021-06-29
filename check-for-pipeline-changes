@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+function check_for_pipeline_changes() {
+    git diff "$@" "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" -- .buildkite
+}
+
+function is_main_branch() {
+    [ "$BUILDKITE_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]
+}
+
+function build_pr_url() {
+    echo "https://github.com/ailohq/$BUILDKITE_PIPELINE_SLUG/pull/$BUILDKITE_PULL_REQUEST/files"
+}
+
+if ! is_main_branch && ! check_for_pipeline_changes -s --ignore-blank-lines --exit-code; then
+    echo "steps:"
+
+    echo "  - label: 'The pipeline definition files have been changed :warning:'                                                     "
+    echo "    key: warning-pipeline-changed                                                                                          "
+    echo "    command: |                                                                                                             "
+    echo "      echo +++ pipeline defintion files have been changed!                                                                 "
+    #echo "      git diff $BUILDKITE_PIPELINE_DEFAULT_BRANCH -- .buildkite                                                   "
+    echo "$(check_for_pipeline_changes --name-only --line-prefix '      echo ')                                                      "
+
+    if [ "$BUILDKITE_PULL_REQUEST" == "false" ]; then
+        echo "      echo ''                                                                                                          "
+        echo "      echo -e '\033[0;31mOpen a Pull Request for this branch in order to review the changes and continue the pipeline' "
+        echo "      exit 1                                                                                                           "
+    else
+        echo "  - wait                                                                                                               "
+        echo "  - block: 'Continue with modifications to Pipeline :warning:'                                                         "
+        echo "    blocked_state: failed                                                                                              "
+        echo "    prompt: |                                                                                                          "
+        echo "      The pipeline definition has been changed!                                                                        "
+        echo "      Check the changes at $(build_pr_url)                                                                             "
+        echo "      Clicking OK will accept the changes and continue the pipeline.                                                   "
+    fi
+
+else
+    echo "steps: []"
+fi
