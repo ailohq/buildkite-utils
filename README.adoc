@@ -1,1 +1,12 @@
-Set of public helpers/utilities for ailo buildkite pipelines
+Set of public helpers/utilities for ailo buildkite pipelines.
+
+
+== _Some variation in tooling, compared to what you may be accustomed to_
+If you're using VS Code, you should already have a prompt to install any required extensions!
+
+* This project uses https://deno.land/[Deno] instead of NodeJS!
+** Deno supports a tighter security model compared to Node, so we can make pipeline scripts (which are run in a very highly privileged environment) easier to audit and safer to run.
+** NodeJS modules are not supported out of the box! There are ways to make _some_ of them work if you _really_ need them, though.
+** Deno imports are _always_ qualified with an extension (eg. `./foobar.ts` instead of `./foobar`), which can make some Typescript tooling a little sad. IntelliJ support is basically non-existent.
+
+* This README was written with https://docs.asciidoctor.org/asciidoc/latest/asciidoc-vs-markdown/[AsciiDoc] instead of Markdown
