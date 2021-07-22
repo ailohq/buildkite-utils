@@ -1,3 +1,4 @@
+import punycode from "https://deno.land/x/punycode/punycode.js";
 import { flattenDependencies, StepLike, StepLikeOpts } from "./StepLike.ts";
 
 export type StepOpts<T> = StepLikeOpts & T;
@@ -6,14 +7,15 @@ export class Step implements StepLike {
   readonly derivedSteps: StepLikeOpts[];
 
   constructor({ dependsOn, ...opts }: StepOpts<Record<string, unknown>>) {
-    // this.dependsOn = dependsOn
-    this.key = ("key" in opts)
-      ? opts.key as string
-      : ("label" in opts)
-      ? opts.label as string
-      : ("block" in opts)
-      ? opts.block as string
-      : undefined;
+    this.key = renderKey(
+      ("key" in opts)
+        ? opts.key as string
+        : ("label" in opts)
+        ? opts.label as string
+        : ("block" in opts)
+        ? opts.block as string
+        : undefined,
+    );
 
     const flatDeps = flattenDependencies(dependsOn ?? []);
 
@@ -31,4 +33,12 @@ export class Step implements StepLike {
       stepDetail,
     ];
   }
+}
+
+function renderKey(rawKey?: string) {
+  if (rawKey === undefined) {
+    return rawKey;
+  }
+
+  return punycode.encode(rawKey.replaceAll(/\s/g, "_"));
 }
