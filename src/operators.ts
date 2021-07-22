@@ -5,6 +5,10 @@ export const ifOnMasterOrHotfix = {
     'build.branch == "$BUILDKITE_DEFAULT_BRANCH" || build.branch =~ /^hotfix/',
 };
 
+export const notOnMaster = {
+  "if": 'build.branch != "$BUILDKITE_DEFAULT_BRANCH"',
+};
+
 export const ifOnHotfix = {
   "if": "build.branch =~ /^hotfix/",
 };
