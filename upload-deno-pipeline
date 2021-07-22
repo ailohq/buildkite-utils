@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+install_deno() {
+  curl -fsSL https://deno.land/x/install/install.sh | sh > /dev/null
+}
+
+PIPELINE_FILE="${1:-".buildkite/pipeline.ts"}"
+DENO_OPTIONS="${DENO_OPTIONS:-""}"
+
+export DENO_INSTALL="$HOME/.deno"
+export PATH="$PATH:$DENO_INSTALL/bin"
+
+if ! which deno > /dev/null; then
+  install_deno
+fi
+
+deno run             \
+    --allow-read     \
+    --allow-env      \
+    $DENO_OPTIONS    \
+    "$PIPELINE_FILE" |
+  buildkite-agent pipeline upload
