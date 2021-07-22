@@ -1,4 +1,4 @@
-import punycode from "https://deno.land/x/punycode/punycode.js";
+import { punycode } from "../deps.ts";
 import { flattenDependencies, StepLike, StepLikeOpts } from "./StepLike.ts";
 
 export type StepOpts<T> = StepLikeOpts & T;
