@@ -27,8 +27,8 @@ export class Step implements StepLike {
     };
 
     this.derivedSteps = [
-      stepDetail,
       ...flatDeps.flatMap((step) => step.derivedSteps),
+      stepDetail,
     ];
   }
 }
