@@ -1,5 +1,5 @@
 import { punycode } from "../deps.ts";
-import { Step, StepOpts } from "./Step.ts";
+import { renderKey, Step, StepOpts } from "./Step.ts";
 
 type TextField = {
   text: string;
@@ -30,12 +30,15 @@ export class BlockStep extends Step {
   constructor(
     opts: StepOpts<{ block: string; prompt?: string; fields?: BlockField[] }>,
   ) {
+    const key = renderKey(opts.block);
+
     const fields = opts.fields?.map((field) => ({
       key: buildBlockKey(field),
       ...field,
     }));
 
     super({
+      key,
       dependsOn: null,
       ...opts,
       fields,
