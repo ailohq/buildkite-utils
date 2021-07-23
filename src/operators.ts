@@ -62,46 +62,52 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
   return aggregator([], steps);
 }
 
-export function inlineBashScript(
-  doc: string,
-  { delimiter = "EOF", stripMargin = true } = {},
+export function inlineScript(
+  docs: string | string[],
+  { delimiter = "EOF", stripMargin = true, shell = "bash -e" } = {},
 ): string[] {
   const lineStartsWithWhitespace = /^(\s*).*$/;
-  if (stripMargin) {
-    const [firstLine, ...restLines] = doc.split(/[\r\n]/);
-    const firstLineStartsWithWhitespace = !!lineStartsWithWhitespace.exec(
-      firstLine,
-    );
-
-    const lines = firstLineStartsWithWhitespace
-      ? [firstLine, ...restLines]
-      : restLines;
-
-    const minimumMargin = Math.min(
-      ...lines
-        .filter((line) => /(\w+)/.exec(line))
-        .map((line) => lineStartsWithWhitespace.exec(line))
-        .filter(isPresent)
-        .map((lineMatch) => lineMatch[1].length),
-    );
-
-    const trimmedFirstLine = firstLineStartsWithWhitespace
-      ? firstLine.slice(minimumMargin)
-      : firstLine;
-
-    return inlineBashScript(
-      [trimmedFirstLine, ...lines.map((line) => line.slice(minimumMargin))]
-        .join("\n"),
-      {
-        delimiter,
-        stripMargin: false,
-      },
-    );
+  if (typeof docs === "string") {
+    return inlineScript([docs], { delimiter, stripMargin, shell });
   }
+
+  const script = docs
+    .flatMap((doc) => {
+      const [firstLine, ...restLines] = doc.split(/[\r\n]/);
+      if (!stripMargin) {
+        return [firstLine, ...restLines];
+      }
+
+      const firstLineStartsWithWhitespace = !!lineStartsWithWhitespace.exec(
+        firstLine,
+      );
+
+      const lines = firstLineStartsWithWhitespace
+        ? [firstLine, ...restLines]
+        : restLines;
+
+      const minimumMargin = Math.min(
+        ...lines
+          .filter((line) => /(\w+)/.exec(line))
+          .map((line) => lineStartsWithWhitespace.exec(line))
+          .filter(isPresent)
+          .map((lineMatch) => lineMatch[1].length),
+      );
+
+      const trimmedFirstLine = firstLineStartsWithWhitespace
+        ? firstLine.slice(minimumMargin)
+        : firstLine;
+
+      return [
+        trimmedFirstLine,
+        ...restLines.map((line) => line.slice(minimumMargin)),
+      ];
+    })
+    .join("\n");
 
   return [
     "bash",
     "-ec",
-    "bash <<EOF\n" + doc + "EOF",
+    shell + " <<'EOF'\n" + script + "EOF",
   ];
 }
