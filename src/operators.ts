@@ -1,4 +1,6 @@
+import { isPresent } from "./deps.ts";
 import { Step } from "./steps/Step.ts";
+import { StepLikeOpts } from "./steps/StepLike.ts";
 
 export const ifOnMasterOrHotfix = {
   "if":
@@ -13,13 +15,6 @@ export const ifOnHotfix = {
   "if": "build.branch =~ /^hotfix/",
 };
 
-// export function concurrency(i: number) {
-//   return {
-//     concurrency: i,
-//     concurrency_group: "${BUILDKITE_PIPELINE_NAME}-${BUILDKITE_STEP_KEY}",
-//   };
-// }
-
 export function buildPipeline(
   { env, pipeline }: { env: Record<string, string>; pipeline: Step[] },
 ): void {
@@ -31,22 +26,22 @@ export function buildPipeline(
   );
 }
 
-function deduplicatePipeline(steps: PipelineStep[]) {
+function deduplicatePipeline(steps: StepLikeOpts[]) {
   function stepHasMatchingKey(key?: string) {
-    return function (step: PipelineStep) {
+    return function (step: StepLikeOpts) {
       return ("key" in step) && step.key === key;
     };
   }
 
-  function isDuplicateStep(step: PipelineStep, agg: PipelineStep[]) {
+  function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
     return ("key" in step) &&
       agg.find(stepHasMatchingKey(step.key)) !== undefined;
   }
 
   function aggregator(
-    agg: PipelineStep[],
-    [head, ...tail]: PipelineStep[],
-  ): PipelineStep[] {
+    agg: StepLikeOpts[],
+    [head, ...tail]: StepLikeOpts[],
+  ): StepLikeOpts[] {
     const isNewStep = !isDuplicateStep(head, agg);
     if (isNewStep) {
       console.warn(`found new step ${head.key}`);
@@ -67,7 +62,46 @@ function deduplicatePipeline(steps: PipelineStep[]) {
   return aggregator([], steps);
 }
 
-type PipelineStep = {
-  key?: string;
-  "if"?: string;
-};
+export function inlineBashScript(
+  doc: string,
+  { delimiter = "EOF", stripMargin = true } = {},
+): string[] {
+  const lineStartsWithWhitespace = /^(\s*).*$/;
+  if (stripMargin) {
+    const [firstLine, ...restLines] = doc.split(/[\r\n]/);
+    const firstLineStartsWithWhitespace = !!lineStartsWithWhitespace.exec(
+      firstLine,
+    );
+
+    const lines = firstLineStartsWithWhitespace
+      ? [firstLine, ...restLines]
+      : restLines;
+
+    const minimumMargin = Math.min(
+      ...lines
+        .filter((line) => /(\w+)/.exec(line))
+        .map((line) => lineStartsWithWhitespace.exec(line))
+        .filter(isPresent)
+        .map((lineMatch) => lineMatch[1].length),
+    );
+
+    const trimmedFirstLine = firstLineStartsWithWhitespace
+      ? firstLine.slice(minimumMargin)
+      : firstLine;
+
+    return inlineBashScript(
+      [trimmedFirstLine, ...lines.map((line) => line.slice(minimumMargin))]
+        .join("\n"),
+      {
+        delimiter,
+        stripMargin: false,
+      },
+    );
+  }
+
+  return [
+    "bash",
+    "-ec",
+    "bash <<EOF\n" + doc + "EOF",
+  ];
+}
