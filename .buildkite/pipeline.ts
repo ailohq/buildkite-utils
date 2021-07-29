@@ -8,7 +8,22 @@ const env = {
 
 const lint = new CommandStep({
   label: ":tslint: Lint",
-  command: "deno lint ",
+  command: `
+    install_deno() {
+        echo "--- setup deno runtime"
+        curl -fsSL https://deno.land/x/install/install.sh | sh > /dev/null
+    }
+
+    export DENO_INSTALL="$HOME/.deno"
+    export PATH="$PATH:$DENO_INSTALL/bin"
+
+    if ! which deno > /dev/null; then
+        install_deno
+    fi
+
+    echo "--- deno lint"
+    deno lint
+  `,
   permitRetryOnPassed: false,
 });
 
