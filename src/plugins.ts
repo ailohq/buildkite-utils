@@ -1,13 +1,13 @@
 type Paths = string | string[];
 
-export function Cache(paths: Paths) {
+export function Cache(paths: Paths, { key }: { key: string }) {
   return {
     "gencer/cache#v2.3.10": {
       backend: "s3",
       s3: {
         bucket: "ailo-buildkite-cache",
       },
-      key: "deps-{{ checksum 'yarn.lock' }}",
+      key,
       paths,
     },
   };
