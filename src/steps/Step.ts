@@ -3,25 +3,27 @@ import { flattenDependencies, StepLike, StepLikeOpts } from "./StepLike.ts";
 
 export type StepOpts<T> = StepLikeOpts & { key?: string } & T;
 export class Step implements StepLike {
-  readonly key?: string;
-  readonly derivedSteps: StepLikeOpts[];
+  constructor(readonly opts: StepOpts<Record<string, unknown>>) {
+  }
 
-  constructor({ dependsOn, ...opts }: StepOpts<Record<string, unknown>>) {
-    this.key = opts.key;
+  get key(): string | undefined {
+    return this.opts.key;
+  }
 
+  get derivedSteps() {
+    const { dependsOn, ...opts } = this.opts;
     const flatDeps = flattenDependencies(dependsOn ?? []);
 
     const stepDetail = {
       key: this.key,
       ...opts,
       // deno-lint-ignore camelcase
-      depends_on: flatDeps
+      depends_on: flatDeps && flatDeps
         .map((step) => step.key)
         .filter(Boolean),
     };
-
-    this.derivedSteps = [
-      ...flatDeps.flatMap((step) => step.derivedSteps),
+    return [
+      ...(flatDeps?.flatMap((step) => step.derivedSteps) ?? []),
       stepDetail,
     ];
   }
