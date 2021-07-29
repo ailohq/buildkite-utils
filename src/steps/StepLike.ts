@@ -1,30 +1,43 @@
+import { isPresent } from "../deps.ts";
+
 export type StepLikeOpts = {
   key?: string;
   "if"?: string;
   dependsOn?: Dependencies | null;
 };
 
-export type Dependencies = StepLike | Dependencies[];
+export type Dependencies = StepLike | undefined | null | Dependencies[];
 
 export type StepLike = {
   readonly key?: string;
   readonly derivedSteps: StepLikeOpts[];
 };
 
-export function flattenDependencies(deps: Dependencies): StepLike[] {
+export function flattenDependencies(deps: Dependencies): StepLike[] | null {
+  if (deps === null) {
+    return deps;
+  }
+
   if (Array.isArray(deps)) {
     return deps
-      .flatMap(flattenDependencies)
-      .reduce((acc: StepLike[], dep) => {
-        if (dep.key === undefined) {
-          return [...acc, dep];
-        } else if (acc.find((d) => d.key === dep.key) === undefined) {
-          return [...acc, dep];
-        } else {
+      .map(flattenDependencies)
+      .reduce((acc: StepLike[] | null, nextDeps) => {
+        if (acc === null) {
+          return nextDeps;
+        }
+
+        if (nextDeps === null) {
           return acc;
         }
-      }, []);
-  } else {
-    return [deps];
+
+        const deduplicated = nextDeps.filter((dep) => {
+          return dep.key === undefined ||
+            acc.some((d) => d.key === dep.key);
+        });
+
+        return [...acc, ...deduplicated];
+      });
   }
+
+  return [deps].filter(isPresent);
 }

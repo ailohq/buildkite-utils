@@ -1,4 +1,4 @@
-import { punycode } from "../deps.ts";
+import { isPresent, punycode } from "../deps.ts";
 import { flattenDependencies, StepLike, StepLikeOpts } from "./StepLike.ts";
 
 export type StepOpts<T> = StepLikeOpts & { key?: string } & T;
@@ -20,7 +20,7 @@ export class Step implements StepLike {
       // deno-lint-ignore camelcase
       depends_on: flatDeps && flatDeps
         .map((step) => step.key)
-        .filter(Boolean),
+        .filter(isPresent),
     };
     return [
       ...(flatDeps?.flatMap((step) => step.derivedSteps) ?? []),
