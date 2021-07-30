@@ -22,7 +22,7 @@ export function flattenDependencies(deps: Dependencies): StepLike[] | null {
     return deps
       .map(flattenDependencies)
       .reduce((acc: StepLike[] | null, nextDeps) => {
-        if (acc === null) {
+        if (acc === null || acc === []) {
           return nextDeps;
         }
 
@@ -36,7 +36,7 @@ export function flattenDependencies(deps: Dependencies): StepLike[] | null {
         });
 
         return [...acc, ...deduplicated];
-      });
+      }, []);
   }
 
   return [deps].filter(isPresent);
