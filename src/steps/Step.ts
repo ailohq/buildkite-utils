@@ -22,6 +22,7 @@ export class Step implements StepLike {
         .map((step) => step.key)
         .filter(isPresent),
     };
+
     return [
       ...(flatDeps?.flatMap((step) => step.derivedSteps) ?? []),
       stepDetail,

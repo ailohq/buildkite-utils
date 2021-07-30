@@ -14,30 +14,25 @@ export type StepLike = {
 };
 
 export function flattenDependencies(deps: Dependencies): StepLike[] | null {
-  if (deps === null) {
-    return deps;
+  const [firstDep, ...flattened] = [...flattenDependenciesImpl(deps)];
+
+  if (firstDep === null && flattened.filter(isPresent).length === 0) {
+    return null;
   }
 
+  return [firstDep, ...flattened].filter(isPresent);
+}
+
+function* flattenDependenciesImpl(
+  deps: Dependencies,
+): Generator<StepLike | null> {
   if (Array.isArray(deps)) {
-    return deps
-      .map(flattenDependencies)
-      .reduce((acc: StepLike[] | null, nextDeps) => {
-        if (acc === null || acc === []) {
-          return nextDeps;
-        }
-
-        if (nextDeps === null) {
-          return acc;
-        }
-
-        const deduplicated = nextDeps.filter((dep) => {
-          return dep.key === undefined ||
-            acc.some((d) => d.key === dep.key);
-        });
-
-        return [...acc, ...deduplicated];
-      }, []);
+    for (const d of deps) {
+      yield* flattenDependenciesImpl(d);
+    }
+  } else if (deps === undefined) {
+    return;
+  } else {
+    yield deps;
   }
-
-  return [deps].filter(isPresent);
 }
