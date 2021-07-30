@@ -2,7 +2,7 @@ import { describe, it } from "https://deno.land/x/test_suite@v0.8.0/mod.ts";
 import { assertEquals } from "https://deno.land/std@0.103.0/testing/asserts.ts";
 
 import { Step } from "./Step.ts";
-import { DeploymentStages } from "./DeploymentSteps.ts";
+import { DeploymentStages } from "./DeploymentStages.ts";
 
 describe("DeploymentStages", () => {
   const stepCustomiser = (opts: Record<string, unknown>) => new Step(opts);
