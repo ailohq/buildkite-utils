@@ -1,6 +1,6 @@
-import { CommandStep } from "../src/steps/mod.ts";
-import { buildPipeline, ifOnMain } from "../src/operators.ts";
-import { GitTag } from "../src/plugins.ts";
+import { CommandStep } from "../lib/steps.ts";
+import { buildPipeline, ifOnMain } from "../lib/operators.ts";
+import { GitTag } from "../lib/plugins.ts";
 
 const environment = {
   TAG: "v1.0.$BUILDKITE_BUILD_NUMBER",
