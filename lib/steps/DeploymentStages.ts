@@ -33,7 +33,7 @@ function normaliseDescription<T>(
     typeof stageDescription === "string" || Array.isArray(stageDescription)
   ) {
     return {
-      steps: stageDescription as string[],
+      steps: [stageDescription].flat(),
     } as NormalisedStageDescription<T>;
   } else {
     const stepsNames = Object.keys(stageDescription);
