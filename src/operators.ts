@@ -20,11 +20,14 @@ export const ifOnHotfix = {
 };
 
 export function buildPipeline(
-  { env, pipeline }: { env: Record<string, string>; pipeline: Step[] },
+  { environment, pipeline }: {
+    environment: Record<string, string>;
+    pipeline: Step[];
+  },
 ): void {
   console.log(
     JSON.stringify({
-      env,
+      env: environment,
       steps: deduplicatePipeline(pipeline.flatMap((step) => step.derivedSteps)),
     }),
   );

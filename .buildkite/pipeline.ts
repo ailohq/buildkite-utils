@@ -2,7 +2,7 @@ import { CommandStep } from "../src/steps/mod.ts";
 import { buildPipeline, ifOnMain } from "../src/operators.ts";
 import { GitTag } from "../src/plugins.ts";
 
-const env = {
+const environment = {
   TAG: "v1.0.$BUILDKITE_BUILD_NUMBER",
 };
 
@@ -27,14 +27,14 @@ const test = DenoCommandStep({
 const tagRelease = new CommandStep({
   ...ifOnMain,
   label: ":git: Tag Release",
-  command: `echo Create release ${env.TAG}`,
+  command: `echo Create release ${environment.TAG}`,
   permitRetryOnPassed: false,
   dependsOn: [lint, test],
-  plugins: [GitTag({ release: true, version: env.TAG })],
+  plugins: [GitTag({ release: true, version: environment.TAG })],
 });
 
 buildPipeline({
-  env,
+  environment,
   pipeline: [tagRelease],
 });
 

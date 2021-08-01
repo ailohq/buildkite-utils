@@ -10,15 +10,21 @@ export type CommandStepOpts<Command> = StepOpts<{
     download?: Paths;
   };
   plugins?: unknown[];
-  env?: Record<string, string>;
+  environment?: Record<string, string>;
   permitRetryOnPassed?: boolean;
   concurrency?: number;
 }>;
 
 export class CommandStep<Command = string> extends Step {
   constructor(
-    { artifacts, plugins, concurrency, permitRetryOnPassed = true, ...opts }:
-      CommandStepOpts<Command>,
+    {
+      artifacts,
+      plugins,
+      concurrency,
+      permitRetryOnPassed = true,
+      environment = {},
+      ...opts
+    }: CommandStepOpts<Command>,
   ) {
     const key = renderKey(opts.label);
 
@@ -43,6 +49,7 @@ export class CommandStep<Command = string> extends Step {
       ...opts,
       ...concurrencyInfo,
       ...permitRetry,
+      env: environment,
       plugins: (plugins || artifacts)
         ? [...(plugins || []), ...artifactPlugin]
         : undefined,
