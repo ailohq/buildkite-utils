@@ -4,15 +4,15 @@ import { StepLikeOpts } from "./steps/StepLike.ts";
 
 export const ifOnMasterOrHotfix = {
   "if":
-    'build.branch == "$BUILDKITE_DEFAULT_BRANCH" || build.branch =~ /^hotfix/',
+    'build.branch == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" || build.branch =~ /^hotfix/',
 };
 
 export const ifOnMain = {
-  "if": 'build.branch == "$BUILDKITE_DEFAULT_BRANCH"',
+  "if": 'build.branch == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH"',
 };
 
 export const notOnMaster = {
-  "if": 'build.branch != "$BUILDKITE_DEFAULT_BRANCH"',
+  "if": 'build.branch != "$BUILDKITE_PIPELINE_DEFAULT_BRANCH"',
 };
 
 export const ifOnHotfix = {
