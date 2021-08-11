@@ -1,13 +1,30 @@
 type Paths = string | string[];
 
-export function Cache(paths: Paths, { key }: { key: string }) {
+type S3BucketConfiguration = {
+  profile?: string;
+  class?: string;
+  args?: string;
+};
+
+export function Cache(
+  paths: Paths,
+  { id = "$BUILDKITE_PIPELINE_NAME", compress = false, ...args }: {
+    id?: string;
+    key: string;
+    compress?: boolean;
+    s3?: S3BucketConfiguration;
+    "restore-keys"?: string[];
+  },
+) {
   return {
     "gencer/cache#v2.4.8": {
+      ...args,
+      compress,
+      id,
       backend: "s3",
       s3: {
         bucket: "ailo-buildkite-cache",
       },
-      key,
       paths,
     },
   };
