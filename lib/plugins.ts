@@ -2,7 +2,7 @@ type Paths = string | string[];
 
 export function Cache(paths: Paths, { key }: { key: string }) {
   return {
-    "gencer/cache#v2.3.10": {
+    "gencer/cache#v2.4.8": {
       backend: "s3",
       s3: {
         bucket: "ailo-buildkite-cache",
