@@ -31,5 +31,8 @@ export class Step implements StepLike {
 }
 
 export function renderKey(rawKey: string) {
-  return punycode.encode(rawKey.replaceAll(/\s/g, "_"));
+  return punycode.encode(
+    rawKey.replaceAll(/\s/g, "_")
+      .replaceAll(/[\[\]]/g, ""),
+  );
 }
