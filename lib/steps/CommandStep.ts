@@ -8,6 +8,8 @@ export type CommandStepOpts<Command> = StepOpts<{
   artifacts?: {
     upload?: Paths;
     download?: Paths;
+    step?: string;
+    build?: string;
   };
   plugins?: unknown[];
   environment?: Record<string, string>;
@@ -32,6 +34,8 @@ export class CommandStep<Command = string> extends Step {
       "artifacts#v1.3.0": {
         upload: artifacts.upload,
         download: artifacts.download,
+        step: artifacts.step,
+        build: artifacts.build
       },
     }];
 
