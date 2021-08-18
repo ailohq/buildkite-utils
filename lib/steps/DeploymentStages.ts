@@ -22,7 +22,7 @@ type StageDescriptionArg<T> = T & {
 
 type StageCustomiser<T, U extends Step> = (
   options: StageDescriptionArg<Omit<T, "steps">>,
-) => U;
+) => U | U[];
 
 function normaliseDescription<T>(
   stageDescription: StageDescription<T>,
@@ -55,7 +55,7 @@ function buildStage<T, U extends Step>(customiser: StageCustomiser<T, U>) {
     { steps, ...options }: NormalisedStageDescription<T>,
     stageIndex: number,
   ) => {
-    return steps.map((stepName) =>
+    return steps.flatMap((stepName) =>
       customiser({
         ...options,
         stageIndex,
