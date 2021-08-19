@@ -5,7 +5,7 @@ import { Step } from "./Step.ts";
 import { DeploymentStages } from "./DeploymentStages.ts";
 
 describe("DeploymentStages", () => {
-  const stepCustomiser = (opts: Record<string, unknown>) => new Step(opts);
+  const stepCustomiser = (opts: Record<string, unknown>) => [new Step({...opts, key: '1'}), new Step({...opts, key: '2'})];
 
   describe("with only one stage", () => {
     it("returns a list of one constructed step when only one step was given", () => {
@@ -13,6 +13,14 @@ describe("DeploymentStages", () => {
 
       assertEquals(result, [
         new Step({
+          key: "1",
+          stageIndex: 0,
+          stepName: "Dev",
+          upperStepName: "DEV",
+          lowerStepName: "dev",
+        }),
+        new Step({
+          key: "2",
           stageIndex: 0,
           stepName: "Dev",
           upperStepName: "DEV",
@@ -29,6 +37,7 @@ describe("DeploymentStages", () => {
 
       assertEquals(result, [
         new Step({
+          key:"1",
           stageIndex: 0,
           if: "branch === main",
           stepName: "Prod",
@@ -36,6 +45,23 @@ describe("DeploymentStages", () => {
           lowerStepName: "prod",
         }),
         new Step({
+          key: "2",
+          stageIndex: 0,
+          if: "branch === main",
+          stepName: "Prod",
+          upperStepName: "PROD",
+          lowerStepName: "prod",
+        }),
+        new Step({
+          key: "1",
+          stageIndex: 0,
+          if: "branch === main",
+          stepName: "Sandbox",
+          upperStepName: "SANDBOX",
+          lowerStepName: "sandbox",
+        }),
+        new Step({
+          key: "2",
           stageIndex: 0,
           if: "branch === main",
           stepName: "Sandbox",
@@ -65,7 +91,7 @@ describe("DeploymentStages", () => {
           result.map(({ opts }) =>
             (opts as unknown as { stepName: string }).stepName
           ),
-          ["Qa", "Prod", "Sandbox"],
+          ["Qa", "Qa", "Prod",  "Prod", "Sandbox", "Sandbox"],
         );
       });
 
@@ -81,20 +107,34 @@ describe("DeploymentStages", () => {
             stepCustomiser({ stageIndex: stageIndex + 1, ...opts })
           );
 
-          assertEquals({
-            stage1,
-            stage2,
-          }, {
-            stage1: [
+          assertEquals(stage1,[
               new Step({
+                key: "1",
                 stageIndex: 0,
                 stepName: "Qa",
                 upperStepName: "QA",
                 lowerStepName: "qa",
               }),
-            ],
-            stage2: [
               new Step({
+                key: "2",
+                stageIndex: 0,
+                stepName: "Qa",
+                upperStepName: "QA",
+                lowerStepName: "qa",
+              })
+            ]);
+            assertEquals(stage2, [
+              new Step({
+                key: "1",
+                stageIndex: 1,
+                stepName: "Prod",
+                upperStepName: "PROD",
+                lowerStepName: "prod",
+                dependsOn: stage1,
+                if: "branch === main",
+              }),
+              new Step({
+                key: "2",
                 stageIndex: 1,
                 stepName: "Prod",
                 upperStepName: "PROD",
@@ -104,6 +144,16 @@ describe("DeploymentStages", () => {
               }),
 
               new Step({
+                key: "1",
+                stageIndex: 1,
+                stepName: "Sandbox",
+                upperStepName: "SANDBOX",
+                lowerStepName: "sandbox",
+                dependsOn: stage1,
+                if: "branch === main",
+              }),
+              new Step({
+                key: "2",
                 stageIndex: 1,
                 stepName: "Sandbox",
                 upperStepName: "SANDBOX",
@@ -112,7 +162,7 @@ describe("DeploymentStages", () => {
                 if: "branch === main",
               }),
             ],
-          });
+          );
 
           assertEquals(result, [...stage1, ...stage2]);
         },
