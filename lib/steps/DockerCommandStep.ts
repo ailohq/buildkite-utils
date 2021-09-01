@@ -9,6 +9,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
     plugins: providedPlugins,
     mountCheckout,
     propagateEnvironment,
+    workdir,
     extraEnvironment,
     volumes,
     dockerLogin: dockerLoginOptions,
@@ -18,6 +19,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
     entrypoint?: string | string[];
     mountCheckout?: boolean;
     propagateEnvironment?: boolean;
+    workdir?: string;
     extraEnvironment?: string[];
     volumes?: Record<string, string>;
     dockerLogin?: DockerLoginOptions;
@@ -33,7 +35,8 @@ export class DockerCommandStep extends CommandStep<undefined> {
             image,
             entrypoint,
             command,
-            "mount-checkout": mountCheckout ?? true
+            workdir,
+            "mount-checkout": mountCheckout ?? true,
             "propagate-environment": propagateEnvironment ?? true,
             environment: extraEnvironment,
             volumes: Object
