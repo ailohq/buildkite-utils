@@ -56,3 +56,14 @@ export function AwsAssumeRole(opts: { roleEnv: string; region?: string }) {
     },
   };
 }
+
+export const Compose = {
+  Publish: (props: { config: string; build: string; push: string }) =>
+    Compose._raw(props),
+
+  Run: (props: { config: string; run: string }) => Compose._raw(props),
+
+  _raw: (props: Record<string, unknown>) => ({
+    "docker-compose#v3.8.0": props,
+  }),
+};

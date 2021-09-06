@@ -96,9 +96,14 @@ function linkStages(
   ];
 }
 
+/**
+ * @deprecated use BuildStageTree instead
+ */
 export function DeploymentStages<T extends Record<never, unknown> | undefined>(
   ...stages: StageDescription<T>[]
 ) {
+  console.warn("DeploymentStages is deprecated, use BuildStageTree instead");
+
   return <U extends Step>(customiser: StageCustomiser<T, U>) => {
     return stages.map(normaliseDescription)
       .map(buildStage(customiser))

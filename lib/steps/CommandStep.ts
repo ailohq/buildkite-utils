@@ -1,4 +1,6 @@
+import { hasPresentKey } from "../deps.ts";
 import { renderKey, Step, StepOpts } from "./Step.ts";
+import { Dependencies, flattenDependencies } from "./StepLike.ts";
 
 type Paths = string | string[];
 
@@ -8,8 +10,6 @@ export type CommandStepOpts<Command> = StepOpts<{
   artifacts?: {
     upload?: Paths;
     download?: Paths;
-    step?: string;
-    build?: string;
   };
   plugins?: unknown[];
   environment?: Record<string, string>;
@@ -18,6 +18,8 @@ export type CommandStepOpts<Command> = StepOpts<{
 }>;
 
 export class CommandStep<Command = string> extends Step {
+  readonly artifacts;
+
   constructor(
     {
       artifacts,
@@ -25,19 +27,25 @@ export class CommandStep<Command = string> extends Step {
       concurrency,
       permitRetryOnPassed = true,
       environment = {},
+      dependsOn,
       ...opts
     }: CommandStepOpts<Command>,
   ) {
     const key = renderKey(opts.label);
 
-    const artifactPlugin = !artifacts ? [] : [{
-      "artifacts#v1.3.0": {
+    if (artifacts?.download) {
+      console.warn(
+        `A step has explicitly specified artifacts to download; prefer to rely on implicit downloads of artifacts from dependencies.\nStep: ${opts.label}\nArtifacts: ${artifacts.download}`,
+      );
+    }
+
+    const dependencyArtifacts = resolveDependsArtifacts(dependsOn);
+    const artifactPlugin = !artifacts ? [] : [
+      artifact({
         upload: artifacts.upload,
         download: artifacts.download,
-        step: artifacts.step,
-        build: artifacts.build
-      },
-    }];
+      }),
+    ];
 
     const concurrencyInfo = concurrency === undefined ? {} : {
       concurrency,
@@ -50,13 +58,45 @@ export class CommandStep<Command = string> extends Step {
 
     super({
       key,
+      dependsOn,
       ...opts,
       ...concurrencyInfo,
       ...permitRetry,
       env: environment,
       plugins: (plugins || artifacts)
-        ? [...(plugins || []), ...artifactPlugin]
+        ? [...(plugins || []), ...artifactPlugin, ...dependencyArtifacts]
         : undefined,
     });
+
+    this.artifacts = artifacts?.upload;
   }
+}
+
+function resolveDependsArtifacts(dependencies: Dependencies) {
+  const depsWithArtifacts = flattenDependencies(dependencies)
+    ?.filter((step) => step instanceof CommandStep)
+    ?.filter(hasPresentKey("artifacts"))
+    ?.flatMap((step) => (step as CommandStep)) ??
+    [];
+
+  return depsWithArtifacts.map((step) =>
+    artifact({
+      step: step.key,
+      download: step.artifacts,
+    })
+  );
+}
+
+type ArtifactDefinition = {
+  upload?: Paths;
+  download?: Paths;
+} | {
+  step: string;
+  download: Paths;
+};
+
+function artifact(props: ArtifactDefinition) {
+  return {
+    "artifacts#v1.3.0": props,
+  };
 }
