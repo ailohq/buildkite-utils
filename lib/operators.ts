@@ -33,6 +33,10 @@ export function buildPipeline(
   );
 }
 
+function deduplicatePipeline(steps: StepLikeOpts[]) {
+  return aggregator([], steps);
+}
+
 function stepHasMatchingKey(key?: string) {
   return function (step: StepLikeOpts) {
     return ("key" in step) && step.key === key;
@@ -63,10 +67,6 @@ function aggregator(
   }
 
   return aggregator(nextAgg, tail);
-}
-
-function deduplicatePipeline(steps: StepLikeOpts[]) {
-    return aggregator([], steps);
 }
 
 export function inlineScript(
