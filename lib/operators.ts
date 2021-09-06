@@ -33,40 +33,40 @@ export function buildPipeline(
   );
 }
 
+function stepHasMatchingKey(key?: string) {
+  return function (step: StepLikeOpts) {
+    return ("key" in step) && step.key === key;
+  };
+}
+
+function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
+  return ("key" in step) &&
+    agg.find(stepHasMatchingKey(step.key)) !== undefined;
+}
+
+function aggregator(
+  agg: StepLikeOpts[],
+  [head, ...tail]: StepLikeOpts[],
+): StepLikeOpts[] {
+  const isNewStep = !isDuplicateStep(head, agg);
+  if (isNewStep) {
+    console.warn(`found new step ${head.key}`);
+  }
+
+  const nextAgg = [
+    ...agg,
+    ...(isNewStep ? [head] : []),
+  ];
+
+  if (tail.length === 0) {
+    return nextAgg;
+  }
+
+  return aggregator(nextAgg, tail);
+}
+
 function deduplicatePipeline(steps: StepLikeOpts[]) {
-  function stepHasMatchingKey(key?: string) {
-    return function (step: StepLikeOpts) {
-      return ("key" in step) && step.key === key;
-    };
-  }
-
-  function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
-    return ("key" in step) &&
-      agg.find(stepHasMatchingKey(step.key)) !== undefined;
-  }
-
-  function aggregator(
-    agg: StepLikeOpts[],
-    [head, ...tail]: StepLikeOpts[],
-  ): StepLikeOpts[] {
-    const isNewStep = !isDuplicateStep(head, agg);
-    if (isNewStep) {
-      console.warn(`found new step ${head.key}`);
-    }
-
-    const nextAgg = [
-      ...agg,
-      ...(isNewStep ? [head] : []),
-    ];
-
-    if (tail.length === 0) {
-      return nextAgg;
-    }
-
-    return aggregator(nextAgg, tail);
-  }
-
-  return aggregator([], steps);
+    return aggregator([], steps);
 }
 
 export function inlineScript(
