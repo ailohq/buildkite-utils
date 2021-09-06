@@ -39,34 +39,23 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
       return ("key" in step) && step.key === key;
     };
   }
-
+  
   function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
     return ("key" in step) &&
       agg.find(stepHasMatchingKey(step.key)) !== undefined;
   }
 
-  function aggregator(
-    agg: StepLikeOpts[],
-    [head, ...tail]: StepLikeOpts[],
-  ): StepLikeOpts[] {
+  return steps.reduce<StepLikeOpts[]>((agg, head) => {
     const isNewStep = !isDuplicateStep(head, agg);
     if (isNewStep) {
       console.warn(`found new step ${head.key}`);
     }
 
-    const nextAgg = [
+    return [
       ...agg,
       ...(isNewStep ? [head] : []),
     ];
-
-    if (tail.length > 0) {
-      return aggregator(nextAgg, tail);
-    } else {
-      return nextAgg;
-    }
-  }
-
-  return aggregator([], steps);
+  }, [])
 }
 
 export function inlineScript(
