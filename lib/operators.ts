@@ -59,11 +59,11 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
       ...(isNewStep ? [head] : []),
     ];
 
-    if (tail.length > 0) {
-      return aggregator(nextAgg, tail);
-    } else {
+    if (tail.length === 0) {
       return nextAgg;
     }
+
+    return aggregator(nextAgg, tail);
   }
 
   return aggregator([], steps);
