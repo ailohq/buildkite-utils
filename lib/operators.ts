@@ -34,39 +34,28 @@ export function buildPipeline(
 }
 
 function deduplicatePipeline(steps: StepLikeOpts[]) {
-  return aggregator([], steps);
-}
-
-function stepHasMatchingKey(key?: string) {
-  return function (step: StepLikeOpts) {
-    return ("key" in step) && step.key === key;
-  };
-}
-
-function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
-  return ("key" in step) &&
-    agg.find(stepHasMatchingKey(step.key)) !== undefined;
-}
-
-function aggregator(
-  agg: StepLikeOpts[],
-  [head, ...tail]: StepLikeOpts[],
-): StepLikeOpts[] {
-  const isNewStep = !isDuplicateStep(head, agg);
-  if (isNewStep) {
-    console.warn(`found new step ${head.key}`);
+  function stepHasMatchingKey(key?: string) {
+    return function (step: StepLikeOpts) {
+      return ("key" in step) && step.key === key;
+    };
+  }
+  
+  function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
+    return ("key" in step) &&
+      agg.find(stepHasMatchingKey(step.key)) !== undefined;
   }
 
-  const nextAgg = [
-    ...agg,
-    ...(isNewStep ? [head] : []),
-  ];
+  return steps.reduce<StepLikeOpts[]>((agg, head) => {
+    const isNewStep = !isDuplicateStep(head, agg);
+    if (isNewStep) {
+      console.warn(`found new step ${head.key}`);
+    }
 
-  if (tail.length === 0) {
-    return nextAgg;
-  }
-
-  return aggregator(nextAgg, tail);
+    return [
+      ...agg,
+      ...(isNewStep ? [head] : []),
+    ];
+  }, [])
 }
 
 export function inlineScript(
