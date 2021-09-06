@@ -1,6 +1,12 @@
-import { CommandStep } from "../lib/steps.ts";
-import { buildPipeline, ifOnMain } from "../lib/operators.ts";
-import { GitTag } from "../lib/plugins.ts";
+// import { CommandStep } from "../lib/steps.ts";
+// import { buildPipeline, ifOnMain } from "../lib/operators.ts";
+// import { GitTag } from "../lib/plugins.ts";
+import {
+  buildPipeline,
+  ifOnMain,
+  plugins,
+  steps,
+} from "../pipeline-builder.ts";
 
 const environment = {
   TAG: "v1.0.$BUILDKITE_BUILD_NUMBER",
@@ -24,13 +30,13 @@ const test = DenoCommandStep({
   `,
 });
 
-const tagRelease = new CommandStep({
+const tagRelease = new steps.CommandStep({
   ...ifOnMain,
   label: ":git: Tag Release",
   command: `echo Create release ${environment.TAG}`,
   permitRetryOnPassed: false,
   dependsOn: [lint, test],
-  plugins: [GitTag({ release: true, version: environment.TAG })],
+  plugins: [plugins.GitTag({ release: true, version: environment.TAG })],
 });
 
 buildPipeline({
@@ -39,9 +45,9 @@ buildPipeline({
 });
 
 function DenoCommandStep(
-  { command, ...opts }: ConstructorParameters<typeof CommandStep>[0],
+  { command, ...opts }: ConstructorParameters<typeof steps.CommandStep>[0],
 ) {
-  return new CommandStep({
+  return new steps.CommandStep({
     ...opts,
     command: `
       install_deno() {
