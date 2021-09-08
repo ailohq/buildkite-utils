@@ -60,7 +60,7 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
 
 export function inlineScript(
   docs: string | string[],
-  { delimiter = "EOF", stripMargin = true, shell = "bash -e" } = {},
+  { delimiter = "EOF", stripMargin = true, shell = "sh -e" } = {},
 ): string[] {
   const lineStartsWithWhitespace = /^(\s*).*$/;
   if (typeof docs === "string") {
@@ -102,7 +102,7 @@ export function inlineScript(
     .join("\n");
 
   return [
-    "bash",
+    "sh",
     "-ec",
     shell + " <<'EOF'\n" + script + "EOF",
   ];
