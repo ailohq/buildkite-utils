@@ -60,7 +60,7 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
 
 export function inlineScript(
   docs: string | string[],
-  { delimiter = "EOF", stripMargin = true, shell = "sh -e" } = {},
+  { delimiter = "EOF", stripMargin = true, shell = "bash -e" } = {},
 ): string[] {
   const lineStartsWithWhitespace = /^(\s*).*$/;
   if (typeof docs === "string") {
