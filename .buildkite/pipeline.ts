@@ -1,6 +1,3 @@
-// import { CommandStep } from "../lib/steps.ts";
-// import { buildPipeline, ifOnMain } from "../lib/operators.ts";
-// import { GitTag } from "../lib/plugins.ts";
 import {
   buildPipeline,
   ifOnMain,
