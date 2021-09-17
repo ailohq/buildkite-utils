@@ -40,6 +40,10 @@ export class DockerCommandStep extends CommandStep<undefined> {
     super({
       ...opts,
       command: undefined,
+      environment: {
+        DOCKER_BUILDKIT: "1",
+        ...opts.environment,
+      },
       plugins: [
         DockerLogin(dockerLoginOptions),
         ...providedPlugins,
@@ -50,7 +54,10 @@ export class DockerCommandStep extends CommandStep<undefined> {
             command,
             workdir,
             "propagate-environment": propagateEnvironment,
-            environment: [...extraEnvironment, ...hostDockerEnv],
+            environment: [
+              ...extraEnvironment,
+              ...hostDockerEnv,
+            ],
             volumes: Object
               .entries({
                 ...hostDockerVolumes,
