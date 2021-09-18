@@ -10,6 +10,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
     command,
     workdir,
     volumes,
+    alwaysPull,
     extraEnvironment = [],
     dockerLogin: dockerLoginOptions,
     plugins: providedPlugins = [],
@@ -26,6 +27,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
     volumes?: Record<string, string>;
     dockerLogin?: DockerLoginOptions;
     mountDocker?: boolean;
+    alwaysPull?: boolean;
   }) {
     const hostDockerVolumes = mountDocker
       ? {
@@ -53,6 +55,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
             entrypoint,
             command,
             workdir,
+            "always-pull": alwaysPull,
             "propagate-environment": propagateEnvironment,
             environment: [
               ...extraEnvironment,
