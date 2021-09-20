@@ -5,19 +5,53 @@ install_deno() {
   curl -fsSL https://deno.land/x/install/install.sh | sh > /dev/null
 }
 
-PIPELINE_FILE="${1:-".buildkite/pipeline.ts"}"
-DENO_OPTIONS="${DENO_OPTIONS:-""}"
+process_deno_pipeline() {
+  DENO_OPTIONS="${DENO_OPTIONS:-""}"
 
-export DENO_INSTALL="$HOME/.deno"
-export PATH="$PATH:$DENO_INSTALL/bin"
+  export DENO_INSTALL="$HOME/.deno"
+  export PATH="$PATH:$DENO_INSTALL/bin"
 
-if ! which deno > /dev/null; then
-  install_deno
-fi
+  if ! which deno >/dev/null; then
+    install_deno >&2
+  fi
 
-deno run             \
+  deno run           \
     --allow-read     \
     --allow-env      \
     $DENO_OPTIONS    \
-    "$PIPELINE_FILE" |
-  buildkite-agent pipeline upload
+    "$PIPELINE_FILE"
+}
+
+upload_pipeline() {
+  buildkite-agent pipeline upload "$@"
+}
+
+PIPELINE_FILE="${1:-".buildkite/pipeline"}"
+
+if [ ! -f "$PIPELINE_FILE" ]; then
+  for extension in ts yml yaml; do
+    name="${PIPELINE_FILE}.${extension}"
+    if [ -f "${name}" ]; then
+      PIPELINE_FILE="${name}"
+      break;
+    fi
+  done
+fi
+
+if [ ! -f "$PIPELINE_FILE" ]; then
+  echo "Unable to process ${PIPELINE_FILE}: File not found" >&2
+  exit 1
+fi
+
+case "$PIPELINE_FILE" in
+  *.ts)
+    process_deno_pipeline | upload_pipeline
+    ;;
+  *.yml|*.yaml)
+    echo "WARN: processing pipeline as yaml - did you mean to target a typescript file?" >&2
+    upload_pipeline "$PIPELINE_FILE"
+    ;;
+  *)
+    echo "Unable to process ${PIPELINE_FILE}: Unknown format (expected extension: ts, yml, yaml)" >&2
+    ;;
+esac
