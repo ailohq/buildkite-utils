@@ -53,7 +53,7 @@ function DenoCommandStep(
       }
 
       export DENO_INSTALL="$HOME/.deno"
-      export PATH="$PATH:$DENO_INSTALL/bin"
+      export PATH="$$PATH:$$DENO_INSTALL/bin"
 
       if ! which deno > /dev/null; then
           install_deno

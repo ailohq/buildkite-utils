@@ -16,6 +16,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
     plugins: providedPlugins = [],
     propagateEnvironment = true,
     mountDocker = true,
+    mountCheckout = true,
     ...opts
   }: CommandStepOpts<string | string[]> & {
     image: string;
@@ -57,6 +58,7 @@ export class DockerCommandStep extends CommandStep<undefined> {
             workdir,
             "always-pull": alwaysPull,
             "propagate-environment": propagateEnvironment,
+            "mount-checkout": mountCheckout,
             environment: [
               ...extraEnvironment,
               ...hostDockerEnv,
