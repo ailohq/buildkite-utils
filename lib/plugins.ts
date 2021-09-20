@@ -34,8 +34,20 @@ export function GitTag(opts: { release?: boolean; version?: string }) {
   return { "ailohq/git-tag#v1.0.13": opts };
 }
 
-export function GithubDeploy(opts: { environment: string }) {
-  return { "ailohq/github-deployment#v1.0.8": opts };
+export function GithubDeploy(
+  { environmentUrl, transientEnvironment, ...opts }: {
+    environment: string;
+    environmentUrl?: string;
+    transientEnvironment?: boolean;
+  },
+) {
+  return {
+    "ailohq/github-deployment#v1.0.8": {
+      ...opts,
+      environment_url: environmentUrl,
+      transient_environment: transientEnvironment,
+    },
+  };
 }
 
 export type DockerLoginOptions = { username?: string; passwordEnv?: string };
