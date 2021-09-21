@@ -102,7 +102,7 @@ export function inlineScript(
     .join("\n");
 
   return [
-    "bash",
+    "sh",
     "-ec",
     shell + " <<'EOF'\n" + script + "EOF",
   ];
