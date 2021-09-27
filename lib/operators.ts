@@ -28,9 +28,15 @@ export function buildPipeline(
   console.log(
     JSON.stringify({
       env: environment,
-      steps: deduplicatePipeline(pipeline.flatMap((step) => step.derivedSteps)),
+      steps: renderSteps(pipeline),
     }),
   );
+}
+export function renderSteps(steps: Step | Step[]) {
+  if (!Array.isArray(steps)) {
+    return [steps];
+  }
+  return deduplicatePipeline(steps.flatMap((step) => step.derivedSteps));
 }
 
 function deduplicatePipeline(steps: StepLikeOpts[]) {
@@ -39,7 +45,7 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
       return ("key" in step) && step.key === key;
     };
   }
-  
+
   function isDuplicateStep(step: StepLikeOpts, agg: StepLikeOpts[]) {
     return ("key" in step) &&
       agg.find(stepHasMatchingKey(step.key)) !== undefined;
@@ -55,7 +61,7 @@ function deduplicatePipeline(steps: StepLikeOpts[]) {
       ...agg,
       ...(isNewStep ? [head] : []),
     ];
-  }, [])
+  }, []);
 }
 
 export function inlineScript(
