@@ -32,9 +32,9 @@ export function buildPipeline(
     }),
   );
 }
-export function renderSteps(steps: Step | Step[]) {
+export function renderSteps(steps: Step | Step[]): StepLikeOpts[] {
   if (!Array.isArray(steps)) {
-    return [steps];
+    return renderSteps([steps]);
   }
   return deduplicatePipeline(steps.flatMap((step) => step.derivedSteps));
 }
@@ -112,6 +112,6 @@ export function inlineScript(
 
   return [
     ...parentShell,
-    `${shell} <<'${delimiter}'\n${script}${delimiter}`,
+    `${shell} <<'${delimiter}'\n${script}\n${delimiter}\n`,
   ];
 }
