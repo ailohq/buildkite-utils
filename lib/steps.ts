@@ -5,4 +5,5 @@ export * from "./steps/DeploymentStages.ts";
 export * from "./steps/DockerCommandStep.ts";
 export * from "./steps/Step.ts";
 export * from "./steps/StepLike.ts";
+export * from "./steps/Trigger.ts";
 export * from "./steps/WaitStep.ts";
