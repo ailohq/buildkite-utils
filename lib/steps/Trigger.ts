@@ -36,7 +36,7 @@ export class Trigger extends Step {
       trigger: pipeline,
       build: {
         meta_data: buildMetadata,
-        environment: {
+        env: {
           ...environment,
           ...Object.fromEntries(extraEnvironment.map((e) => [e, `$${e}`])),
         },
