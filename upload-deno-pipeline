@@ -19,39 +19,115 @@ process_deno_pipeline() {
     --allow-read     \
     --allow-env      \
     $DENO_OPTIONS    \
-    "$PIPELINE_FILE"
+    "$1"
 }
 
-upload_pipeline() {
-  buildkite-agent pipeline upload "$@"
+resolve_pipeline() {
+  PIPELINE_FILE="$1"
+
+  if [ ! -f "$PIPELINE_FILE" ]; then
+    for extension in ts yml yaml; do
+      name="${PIPELINE_FILE}.${extension}"
+      if [ -f "${name}" ]; then
+        PIPELINE_FILE="${name}"
+        break;
+      fi
+    done
+  fi
+
+  if [ ! -f "$PIPELINE_FILE" ]; then
+    echo "Unable to process ${PIPELINE_FILE}: File not found" >&2
+    exit 1
+  fi
+
+  echo "$PIPELINE_FILE"
 }
 
-PIPELINE_FILE="${1:-${PIPELINE_FILE:-".buildkite/pipeline"}}"
+process_pipeline() {
+  PIPELINE_FILE="$(resolve_pipeline "${1:-${PIPELINE_FILE:-".buildkite/pipeline"}}")"
 
-if [ ! -f "$PIPELINE_FILE" ]; then
-  for extension in ts yml yaml; do
-    name="${PIPELINE_FILE}.${extension}"
-    if [ -f "${name}" ]; then
-      PIPELINE_FILE="${name}"
-      break;
+  case "$PIPELINE_FILE" in
+    *.ts)
+      process_deno_pipeline "$PIPELINE_FILE"
+      ;;
+    *.yml|*.yaml)
+      echo "WARN: processing pipeline as yaml - did you mean to target a typescript file?" >&2
+      cat "$PIPELINE_FILE"
+      ;;
+    *)
+      echo "Unable to process ${PIPELINE_FILE}: Unknown format (expected extension: ts, yml, yaml)" >&2
+      exit 2
+      ;;
+  esac
+}
+
+process_branch_pipeline() {
+  BRANCH="$1"
+  PIPELINE_FILE="${2:-}"
+
+  cd "$(mktemp -d)"
+  git clone $BUILDKITE_GIT_CLONE_FLAGS -b "$BRANCH" "$BUILDKITE_REPO" . >&2
+
+  process_pipeline "${PIPELINE_FILE:-}"
+}
+
+main() {
+  process_pipeline "${1:-}" | 
+    buildkite-agent pipeline upload
+}
+
+is_diff() {
+    diff --ignore-blank-lines "$1" "$2" >/dev/null 2>&1
+}
+
+build_pr_url() {
+    echo "https://github.com/ailohq/$BUILDKITE_PIPELINE_SLUG/pull/$BUILDKITE_PULL_REQUEST/files"
+}
+
+inject_diff_confirmation() {
+    echo "steps:"
+
+    echo "  - label: 'The pipeline definition files have been changed :warning:'                                                     "
+    echo "    key: warning-pipeline-changed                                                                                          "
+    echo "    command: |                                                                                                             "
+    echo "      echo --- install dyff command                                                                                        "
+    echo "      curl --silent --location https://git.io/JYfAY | bash                                                                 "
+    echo "      echo +++ pipeline defintion files have been changed!                                                                 "
+    echo "      dyff between --color on .main_branch_pipeline.yaml .current_branch_pipeline.yaml                                     "
+    #echo "      git diff $BUILDKITE_PIPELINE_DEFAULT_BRANCH -- .buildkite                                                   "
+    # echo "$(check_for_pipeline_changes --name-only --line-prefix '      echo ')                                                      "
+
+    if [ "$BUILDKITE_PULL_REQUEST" == "false" ]; then
+        echo "      echo ''                                                                                                          "
+        echo "      echo -e '\033[0;31mOpen a Pull Request for this branch in order to review the changes and continue the pipeline' "
+        echo "      exit 1                                                                                                           "
+    else
+        echo "    soft_fail: true                                                                                                    "
+        echo "  - block: 'Continue with modifications to Pipeline :warning:'                                                         "
+        echo "    blocked_state: failed                                                                                              "
+        echo "    prompt: |                                                                                                          "
+        echo "      The pipeline definition has been changed!                                                                        "
+        echo "      Check the changes at $(build_pr_url)                                                                             "
+        echo "      Clicking OK will accept the changes and continue the pipeline.                                                   "
+        echo "  - wait                                                                                                               "
     fi
-  done
-fi
+}
 
-if [ ! -f "$PIPELINE_FILE" ]; then
-  echo "Unable to process ${PIPELINE_FILE}: File not found" >&2
-  exit 1
-fi
-
-case "$PIPELINE_FILE" in
-  *.ts)
-    process_deno_pipeline | upload_pipeline
-    ;;
-  *.yml|*.yaml)
-    echo "WARN: processing pipeline as yaml - did you mean to target a typescript file?" >&2
-    upload_pipeline "$PIPELINE_FILE"
+case "${BUILDKITE_BRANCH}" in
+  "$BUILDKITE_PIPELINE_DEFAULT_BRANCH")
+    main "${1:-}"
     ;;
   *)
-    echo "Unable to process ${PIPELINE_FILE}: Unknown format (expected extension: ts, yml, yaml)" >&2
+    process_pipeline "${1:-}" \
+      > .current_branch_pipeline.yaml
+
+    process_branch_pipeline "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" "${1:-}" \
+      > .main_branch_pipeline.yaml
+
+    if is_diff .current_branch_pipeline.yaml .main_branch_pipeline.yaml; then
+      inject_diff_confirmation | buildkite-agent pipeline upload
+    fi
+
+    main "${1:-}"
     ;;
 esac
