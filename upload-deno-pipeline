@@ -23,7 +23,7 @@ process_deno_pipeline() {
 }
 
 resolve_pipeline() {
-  PIPELINE_FILE="$1"
+  PIPELINE_FILE="${1:-${PIPELINE_FILE:-".buildkite/pipeline"}}"
 
   if [ ! -f "$PIPELINE_FILE" ]; then
     for extension in ts yml yaml; do
@@ -35,16 +35,17 @@ resolve_pipeline() {
     done
   fi
 
-  if [ ! -f "$PIPELINE_FILE" ]; then
-    echo "Unable to process ${PIPELINE_FILE}: File not found" >&2
-    exit 1
-  fi
-
+  echo "will attempt to use pipeline file at ${PIPELINE_FILE}" >&2
   echo "$PIPELINE_FILE"
 }
 
 process_pipeline() {
-  PIPELINE_FILE="$(resolve_pipeline "${1:-${PIPELINE_FILE:-".buildkite/pipeline"}}")"
+  PIPELINE_FILE="$(resolve_pipeline "${1:-}")"
+
+  if [ ! -f "$PIPELINE_FILE" ]; then
+    echo "Unable to process ${PIPELINE_FILE}: File not found" >&2
+    exit 1
+  fi
 
   case "$PIPELINE_FILE" in
     *.ts)
@@ -61,23 +62,24 @@ process_pipeline() {
   esac
 }
 
-process_branch_pipeline() {
+process_branch_pipeline() {(
   BRANCH="$1"
-  PIPELINE_FILE="${2:-}"
+  PIPELINE_FILE="$(resolve_pipeline "${2:-}")"
 
   cd "$(mktemp -d)"
   git clone $BUILDKITE_GIT_CLONE_FLAGS -b "$BRANCH" "$BUILDKITE_REPO" . >&2
 
-  process_pipeline "${PIPELINE_FILE:-}"
-}
 
-main() {
-  process_pipeline "${1:-}" | 
-    buildkite-agent pipeline upload
-}
+  if [ -f "$PIPELINE_FILE" ]; then
+    process_pipeline "${PIPELINE_FILE}"
+  else
+    echo "${PIPELINE_FILE} does not exist, using an empty pipeline for the diff" >&2
+    echo ""
+  fi
+)}
 
 is_diff() {
-    diff --ignore-blank-lines "$1" "$2" >/dev/null 2>&1
+    diff -q --ignore-blank-lines "$1" "$2"
 }
 
 build_pr_url() {
@@ -85,49 +87,64 @@ build_pr_url() {
 }
 
 inject_diff_confirmation() {
-    echo "steps:"
+  CURRENT_BRANCH_PIPELINE="$1"
+  DEFAULT_BRANCH_PIPELINE="$2"
 
-    echo "  - label: 'The pipeline definition files have been changed :warning:'                                                     "
-    echo "    key: warning-pipeline-changed                                                                                          "
-    echo "    command: |                                                                                                             "
-    echo "      echo --- install dyff command                                                                                        "
-    echo "      curl --silent --location https://git.io/JYfAY | bash                                                                 "
-    echo "      echo +++ pipeline defintion files have been changed!                                                                 "
-    echo "      dyff between --color on .main_branch_pipeline.yaml .current_branch_pipeline.yaml                                     "
-    #echo "      git diff $BUILDKITE_PIPELINE_DEFAULT_BRANCH -- .buildkite                                                   "
-    # echo "$(check_for_pipeline_changes --name-only --line-prefix '      echo ')                                                      "
+  echo "steps:"
+  echo "  - label: 'The pipeline definition files have been changed :warning:'                                                     "
+  echo "    key: warning-pipeline-changed                                                                                          "
+  echo "    command: |                                                                                                             "
+  echo "      echo --- install dyff command                                                                                        "
+  echo "      curl --silent --location https://git.io/JYfAY | bash                                                                 "
+  echo "      echo +++ pipeline defintion files have been changed!                                                                 "
+  echo "      dyff between --color on \"${CURRENT_BRANCH_PIPELINE}\" \"${DEFAULT_BRANCH_PIPELINE}\"                                "
+  #echo "      git diff $BUILDKITE_PIPELINE_DEFAULT_BRANCH -- .buildkite                                                   "
+  # echo "$(check_for_pipeline_changes --name-only --line-prefix '      echo ')                                                      "
 
-    if [ "$BUILDKITE_PULL_REQUEST" == "false" ]; then
-        echo "      echo ''                                                                                                          "
-        echo "      echo -e '\033[0;31mOpen a Pull Request for this branch in order to review the changes and continue the pipeline' "
-        echo "      exit 1                                                                                                           "
-    else
-        echo "    soft_fail: true                                                                                                    "
-        echo "  - block: 'Continue with modifications to Pipeline :warning:'                                                         "
-        echo "    blocked_state: failed                                                                                              "
-        echo "    prompt: |                                                                                                          "
-        echo "      The pipeline definition has been changed!                                                                        "
-        echo "      Check the changes at $(build_pr_url)                                                                             "
-        echo "      Clicking OK will accept the changes and continue the pipeline.                                                   "
-        echo "  - wait                                                                                                               "
-    fi
+  if [ "$BUILDKITE_PULL_REQUEST" == "false" ]; then
+      echo "      echo ''                                                                                                          "
+      echo "      echo -e '\033[0;31mOpen a Pull Request for this branch in order to review the changes and continue the pipeline' "
+      echo "      exit 1                                                                                                           "
+  else
+      echo "    soft_fail: true                                                                                                    "
+      echo "  - block: 'Continue with modifications to Pipeline :warning:'                                                         "
+      echo "    blocked_state: failed                                                                                              "
+      echo "    prompt: |                                                                                                          "
+      echo "      The pipeline definition has been changed!                                                                        "
+      echo "      Check the changes at $(build_pr_url)                                                                             "
+      echo "      Clicking OK will accept the changes and continue the pipeline.                                                   "
+      echo "  - wait                                                                                                               "
+  fi
 }
 
 case "${BUILDKITE_BRANCH}" in
   "$BUILDKITE_PIPELINE_DEFAULT_BRANCH")
-    main "${1:-}"
+    process_pipeline "${1:-}" | 
+      buildkite-agent pipeline upload
+
     ;;
   *)
+    CURRENT_BRANCH_PIPELINE="${BUILDKITE_BRANCH}_pipeline.yaml"
+    DEFAULT_BRANCH_PIPELINE="${BUILDKITE_PIPELINE_DEFAULT_BRANCH}_pipeline.yaml"
+
+
+    echo "--- checking pipeline diff" >&2
+    echo "build ${BUILDKITE_BRANCH} branch pipeline"
     process_pipeline "${1:-}" \
-      > .current_branch_pipeline.yaml
+      > "${CURRENT_BRANCH_PIPELINE}"
 
+    echo "build ${BUILDKITE_PIPELINE_DEFAULT_BRANCH} branch pipeline"
     process_branch_pipeline "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" "${1:-}" \
-      > .main_branch_pipeline.yaml
+      > "${DEFAULT_BRANCH_PIPELINE}"
 
-    if is_diff .current_branch_pipeline.yaml .main_branch_pipeline.yaml; then
-      inject_diff_confirmation | buildkite-agent pipeline upload
+    if is_diff "${CURRENT_BRANCH_PIPELINE}" "${DEFAULT_BRANCH_PIPELINE}"; then
+      echo "WARN: The pipeline generated for the current branch is different to the pipeline generated in ${BUILDKITE_PIPELINE_DEFAULT_BRANCH}." >&2
+      echo "      Generating confirmation steps..." >&2
+      inject_diff_confirmation "${CURRENT_BRANCH_PIPELINE}" "${DEFAULT_BRANCH_PIPELINE}" | 
+        buildkite-agent pipeline upload
     fi
 
-    main "${1:-}"
+    echo "uploading pipeline" >&2
+    tr '$' '\$' < "${CURRENT_BRANCH_PIPELINE}" | tee -a /dev/stderr | buildkite-agent pipeline upload
     ;;
 esac
