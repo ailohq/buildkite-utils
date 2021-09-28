@@ -58,6 +58,7 @@ export namespace Trigger {
         commit: Deno.env.get("BUILDKITE_COMMIT"),
         branch: Deno.env.get("BUILDKITE_BRANCH"),
         extraEnvironment: [
+          ...(build.extraEnvironment ?? []),
           "BUILDKITE_PULL_REQUEST",
           "BUILDKITE_PULL_REQUEST_BASE_BRANCH",
           "BUILDKITE_PULL_REQUEST_REPO",
