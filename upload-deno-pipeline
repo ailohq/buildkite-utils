@@ -93,20 +93,26 @@ inject_diff_confirmation() {
   CURRENT_BRANCH_PIPELINE="$1"
   DEFAULT_BRANCH_PIPELINE="$2"
 
+  echo "--- install dyff (better JSON/Yaml diff)"
+  source >&2 <(cat <<EOF
+    HOME="$(mktemp -d)"
+    mkdir -p "$HOME/bin"
+    export PATH="$HOME/bin:$PATH"
+
+    curl --silent --location https://git.io/JYfAY | bash
+EOF
+
   echo "steps:"
   echo "  - label: 'The pipeline definition files have been changed :warning:'                                                     "
   echo "    key: warning-pipeline-changed                                                                                          "
   echo "    command: |                                                                                                             "
-  #echo "      echo --- install dyff command                                                                                        "
-  #echo "      curl --silent --location https://git.io/JYfAY | bash                                                                 "
   echo "      echo +++ pipeline defintion files have been changed!                                                                 "
-  #echo "      dyff between --color on \"${CURRENT_BRANCH_PIPELINE}\" \"${DEFAULT_BRANCH_PIPELINE}\"                                "
-  # echo "      diff \"${CURRENT_BRANCH_PIPELINE}\" \"${DEFAULT_BRANCH_PIPELINE}\"                                                   "
   echo "--- diff:" >&2
-  diff "${CURRENT_BRANCH_PIPELINE}" "${DEFAULT_BRANCH_PIPELINE}" |
-    sed -e "s/'/'''/"                                            | # replace single ' char with triple ' char (ie. escape it) 
-    sed -e "s/^/      echo '/"                                   | # prefix each line with "      echo '"
-    sed -e "s/$/'/"                                                # suffix each line with a closing '
+#   diff "${CURRENT_BRANCH_PIPELINE}" "${DEFAULT_BRANCH_PIPELINE}" |
+  dyff between --set-exit-code "${CURRENT_BRANCH_PIPELINE}" "${DEFAULT_BRANCH_PIPELINE}" |
+    sed -e "s/'/'''/"                                                                    | # replace single ' char with triple ' char (ie. escape it) 
+    sed -e "s/^/      echo '/"                                                           | # prefix each line with "      echo '"
+    sed -e "s/$/'/"                                                                        # suffix each line with a closing '
 
   #echo "      git diff $BUILDKITE_PIPELINE_DEFAULT_BRANCH -- .buildkite                                                   "
   # echo "$(check_for_pipeline_changes --name-only --line-prefix '      echo ')                                                      "
