@@ -7,6 +7,7 @@ install_deno() {
 
 process_deno_pipeline() {
   DENO_OPTIONS="${DENO_OPTIONS:-""}"
+  echo "adding github auth token DENO_AUTH_TOKENS to resolve private repos" >&2
   DENO_AUTH_TOKENS="${DENO_AUTH_TOKENS:-};$GITHUB_TOKEN@raw.githubusercontent.com"
 
   export DENO_INSTALL="$HOME/.deno"
