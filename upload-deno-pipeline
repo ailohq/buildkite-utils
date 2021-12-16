@@ -54,10 +54,11 @@ process_deno_pipeline() {
     install_deno >&2
   fi
 
-  deno run           \
-    --allow-read     \
-    --allow-env      \
-    $DENO_OPTIONS    \
+  deno run            \
+    --allow-read      \
+    --allow-env       \
+    --no-check=remote \
+    $DENO_OPTIONS     \
     "$1"
 }
 
