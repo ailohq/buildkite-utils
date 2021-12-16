@@ -34,7 +34,8 @@ function normaliseDescription<T>(
   ) {
     return {
       steps: [stageDescription].flat(),
-    } as NormalisedStageDescription<T>;
+      // fixme
+    } as unknown as NormalisedStageDescription<T>;
   } else {
     const stepsNames = Object.keys(stageDescription);
     if (stepsNames.length !== 1) {
