@@ -14,15 +14,13 @@ install_deno() {
   	exit 1
   fi
 
-  if [ "$OS" = "Windows_NT" ]; then
-  	target="x86_64-pc-windows-msvc"
-  else
+
   	case $(uname -sm) in
   	"Darwin x86_64") target="x86_64-apple-darwin" ;;
   	"Darwin arm64") target="aarch64-apple-darwin" ;;
   	*) target="x86_64-unknown-linux-gnu" ;;
   	esac
-  fi
+  
 
   if [ -z "${DENO_VERSION:-}" ]; then
         deno_uri="https://github.com/denoland/deno/releases/latest/download/deno-${target}.zip"
