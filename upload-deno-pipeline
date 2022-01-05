@@ -5,7 +5,8 @@ set -euo pipefail
 export YQ_INSTALL_D="$(mktemp -d)"
 
 install_deno() {
-  curl -fsSL https://deno.land/x/install/install.sh | sh -s -- ${DENO_VERSION:-} > /dev/null
+#  curl -fsSL https://deno.land/x/install/install.sh | sh -s -- ${DENO_VERSION:-} > /dev/null
+  cat deno-install.sh | sh -s -- ${DENO_VERSION:-} > /dev/null
 }
 
 install_dyff() {(
