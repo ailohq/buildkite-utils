@@ -65,9 +65,11 @@ export class CommandStep<Command = string> extends Step {
     }
 
     if(opts.concurrencyMethod)
-    { // @ts-ignore
-        concurrencyInfo.concurrency_method = opts.concurrencyMethod;
-        delete opts['concurrencyMethod'];
+    {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      concurrencyInfo.concurrency_method = opts.concurrencyMethod;
+      delete opts['concurrencyMethod'];
     }
     super({
       key,
