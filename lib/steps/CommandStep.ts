@@ -66,8 +66,7 @@ export class CommandStep<Command = string> extends Step {
 
     if(opts.concurrencyMethod)
     {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      // @ts-ignore: add property
       concurrencyInfo.concurrency_method = opts.concurrencyMethod;
       delete opts['concurrencyMethod'];
     }
