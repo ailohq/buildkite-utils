@@ -15,6 +15,8 @@ export type CommandStepOpts<Command> = StepOpts<{
   environment?: Record<string, string>;
   permitRetryOnPassed?: boolean;
   concurrency?: number;
+  concurrencyGroup?: string;
+  concurrencyMethod?: string;
 }>;
 
 export class CommandStep<Command = string> extends Step {
