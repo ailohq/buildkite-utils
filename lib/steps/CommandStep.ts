@@ -51,13 +51,24 @@ export class CommandStep<Command = string> extends Step {
 
     const concurrencyInfo = concurrency === undefined ? {} : {
       concurrency,
-      concurrency_group: `\${BUILDKITE_PIPELINE_NAME}-${key}`,
+      concurrency_group: opts.concurrencyGroup ?? `\${BUILDKITE_PIPELINE_NAME}-${key}`,
     };
 
     const permitRetry = (permitRetryOnPassed === false)
       ? {}
       : { retry: { manual: { permit_on_passed: true } } };
 
+    if(opts.concurrencyGroup)
+    {
+      concurrencyInfo.concurrency_group = opts.concurrencyGroup;
+      delete opts['concurrencyGroup'];
+    }
+
+    if(opts.concurrencyMethod)
+    { // @ts-ignore
+        concurrencyInfo.concurrency_method = opts.concurrencyMethod;
+        delete opts['concurrencyMethod'];
+    }
     super({
       key,
       dependsOn,
